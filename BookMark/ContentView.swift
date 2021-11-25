@@ -4,13 +4,12 @@ struct ContentView: View {
     
     @State var results = [Test]()
     
-    //
-    var apiURL = "http://localhost:8888/api/book/search/Harry/Ink";
+    var apiURL = "http://localhost:8888/api/book/search/Harry/ink";
   
     var body: some View {
         List(results, id: \.id) { item in
             VStack(alignment: .leading) {
-                Text(item.book_name)
+                Text(fullTitle(book: item))
             }
         }.onAppear(perform: loadData)
     }
@@ -43,6 +42,10 @@ struct ContentView: View {
             }
             
         }).resume()
+    }
+    
+    func fullTitle (book:Test) -> String {
+        return book.series_name + " #" + String(book.series_position) + ": " + book.book_name;
     }
     
 }

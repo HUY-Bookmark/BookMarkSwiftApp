@@ -7,15 +7,13 @@
 
 import Foundation
 
-struct TaskEntry: Codable  {
-    let id: Int
-    let title: String
-}
-
 struct Test: Codable {
     let response: String
     let id: Int
-    let book_name: String
     let isbn13: String
     let isbn11: String
+    let book_name: String
+    let series_name: String
+    let series_position: Int
+    let genre: String
 }
