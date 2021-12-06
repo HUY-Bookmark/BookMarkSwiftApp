@@ -11,7 +11,7 @@ import SwiftUI
 struct BookMarkApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
         }
     }
 }

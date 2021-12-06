@@ -7,15 +7,21 @@ struct ContentView: View {
     
     var usrData = UsrData(usr: 1, tok: "19208310")
     
-    var bookshelfApiURL = "http://localhost:8888/api/bookshelf"
-    var bookIdApiURL = "http://localhost:8888/api/book/id/"
+    var bookshelfApiURL = "http://localhost:8887/api/bookshelf"
+    var bookIdApiURL = "http://localhost:8887/api/book/id/"
   
     var body: some View {
-        List(bookList, id: \.id) { item in
-            VStack(alignment: .leading) {
-                Text(fullTitle(book:item))
+        NavigationView{
+            List(bookList, id: \.id) { item in
+                VStack(alignment: .leading) {
+                    Text(fullTitle(book:item))
+                    
+                }
             }
-        }.onAppear(perform: loadData)
+            .onAppear(perform: loadData)
+            .navigationTitle("Books")
+        }
+        
     }
     
   
