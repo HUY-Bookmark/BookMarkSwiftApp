@@ -49,36 +49,25 @@ struct ContentView: View {
     
   
     func loadBookshelf() {
-        guard let url: URL = URL(string: self.host + self.bookshelfEndpoint)
-        else {
-            print("invalid URL")
-            return
-        }
-        
-        var urlRequest: URLRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
+        var jsonData = Data()
         do {
-            urlRequest.httpBody = try JSONEncoder().encode(usrData)
-            //print(String(data: urlRequest.httpBody!, encoding: .utf8)!)
-            URLSession.shared.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
-                // check if response is okay
-                
-                guard let data = data else {
-                    print("invalid response")
-                    return
-                }
-                
-                // convert JSON response into class model as an array
-                do {
-                    self.bookshelves = try JSONDecoder().decode([Bookshelf].self, from: data)
-                    initBookshelf()
-                } catch {
-                    print("Bookshelf data load: " + error.localizedDescription)
-                }
-                
-            }).resume()
+            jsonData = try JSONEncoder().encode(usrData)
         } catch {
-            print("Bookshelf send request: " + error.localizedDescription)
+            print("ERROR")
+        }
+        requestWithBody(
+            method: "POST",
+            urlStr: self.host + self.bookshelfEndpoint,
+            body: jsonData,
+            dataProcess: loadBookshelfData)
+    }
+    
+    func loadBookshelfData (data: Data) {
+        do {
+            self.bookshelves = try JSONDecoder().decode([Bookshelf].self, from: data)
+            initBookshelf()
+        } catch {
+            print("Bookshelf data load: " + error.localizedDescription)
         }
     }
     
@@ -90,42 +79,32 @@ struct ContentView: View {
             }
             
             for shelf in bookshelf.shelves {
-                fetchBookData(bookid: shelf.book_id, id: i)
+                fetchBookData(bookISBN: shelf.book_id, id: i)
                 i += 1
             }
             selectedSorting = selectSorting(str: bookshelf.sorting)
         }
     }
     
-    func fetchBookData (bookid: String, id: Int) {
-        guard let url: URL = URL(string: self.host + self.bookIdEndpoint + bookid)
-        else {
-            print("invalid URL")
-            return
-        }
+    func fetchBookData (bookISBN: String, id: Int) {
+        requestNoBody(
+            method: "GET",
+            urlStr: self.host + self.bookIdEndpoint + bookISBN,
+            dataProcess: loadBookItem,
+            funcParam: id)
         
-        var urlRequest: URLRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "GET"
-        
-        URLSession.shared.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
-            // check if response is okay
-            
-            guard let data = data else {
-                print("invalid response")
-                return
-            }
-            
-            // convert JSON response into class model as an array
-            do {
-                var books = try JSONDecoder().decode([Book].self, from: data)
-                books[0].id = id
-                bookList[id - 1] = books[0]
-            } catch {
-                print("Book data load / \(bookid) :" + error.localizedDescription)
-            }
-            
-        }).resume()
     }
+    
+    func loadBookItem (data: Data, id: Int) {
+        do {
+            var books = try JSONDecoder().decode([Book].self, from: data)
+            books[0].id = id
+            bookList[id - 1] = books[0]
+        } catch {
+            print("Book data load / \(id) :" + error.localizedDescription)
+        }
+    }
+    
     
     func fullTitle (book:Book) -> String {
         if (book.series_name != "" && book.series_position != 0) {
@@ -161,42 +140,33 @@ struct ContentView: View {
     }
     
     func resortBookshelf () {
-        guard let url: URL = URL(string: self.host + self.bookshelfSortEndpoint + sortingAsStr(s: selectedSorting))
-        else {
-            print("invalid URL")
-            return
+        var jsonData = Data()
+        do {
+            jsonData = try JSONEncoder().encode(usrData)
+        } catch {
+            print("ERROR")
         }
         
-        var urlRequest: URLRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "PATCH"
+        requestWithBody(
+            method: "PATCH",
+            urlStr: self.host + self.bookshelfSortEndpoint + sortingAsStr(s: selectedSorting),
+            body: jsonData,
+            dataProcess: updateBookList)
+    }
+    
+    func updateBookList (data: Data) {
         do {
-            print(url)
-            urlRequest.httpBody = try JSONEncoder().encode(usrData)
-            //print(String(data: urlRequest.httpBody!, encoding: .utf8)!)
-            URLSession.shared.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
-                // check if response is okay
-                
-                guard let data = data else {
-                    print("invalid response")
-                    return
+            let resorted = try JSONDecoder().decode([Bookshelf].self, from: data)
+            var i = 1
+            for bookshelf in resorted {
+                for shelf in bookshelf.shelves {
+                    fetchBookData(bookISBN: shelf.book_id, id: i)
+                    i += 1
                 }
-                
-                do {
-                    let resorted = try JSONDecoder().decode([Bookshelf].self, from: data)
-                    var i = 1
-                    for bookshelf in resorted {
-                        for shelf in bookshelf.shelves {
-                            fetchBookData(bookid: shelf.book_id, id: i)
-                            i += 1
-                        }
-                        selectedSorting = selectSorting(str: bookshelf.sorting)
-                    }
-                } catch {
-                    print("Bookshelf data load: " + error.localizedDescription)
-                }
-            }).resume()
+                selectedSorting = selectSorting(str: bookshelf.sorting)
+            }
         } catch {
-            print("Bookshelf send request: " + error.localizedDescription)
+            print("Bookshelf data load: " + error.localizedDescription)
         }
     }
     
