@@ -21,6 +21,19 @@ struct Book: Codable {
     let series_name: String
     let series_position: Int
     let genre: String
+    let authors: [String]
+    
+    init() {
+        response = ""
+        id = 0
+        isbn13 = ""
+        isbn11 = ""
+        book_name = ""
+        series_name = ""
+        series_position = 0
+        genre = ""
+        authors = [""]
+    }
 }
 
 struct Shelf: Codable {

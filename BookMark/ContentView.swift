@@ -6,8 +6,10 @@ struct ContentView: View {
     @State var bookList = [Book]()
     
     var usrData = UsrData(usr: 1, tok: "19208310")
+    var bookDefault: Book = Book.init()
     
-    var host = "https://bookmark-bookshelf.herokuapp.com/api"
+    //var host = "https://bookmark-bookshelf.herokuapp.com/api"
+    var host = "http://localhost:8888/api"
     
     var bookshelfEndpoint = "/bookshelf"
     var bookIdEndpoint = "/book/id/"
@@ -17,13 +19,12 @@ struct ContentView: View {
         NavigationView{
             List(bookList, id: \.id) { item in
                 VStack(alignment: .leading) {
-                    Text(fullTitle(book:item))
-                    
+                    Text("\(fullTitle(book: item) ) by \(mergeAuthors(authorList: item.authors))")
                 }
             }
-            .onAppear(perform: loadBookshelf)
-            .navigationTitle("Books")
         }
+        .navigationTitle("Books")
+        .onAppear(perform: loadBookshelf)
         
     }
     
@@ -52,7 +53,13 @@ struct ContentView: View {
                 do {
                     self.bookshelves = try JSONDecoder().decode([Bookshelf].self, from: data)
                     var i = 1
+                    print(bookshelves)
                     for bookshelf in self.bookshelves {
+                        //bookList = [Book](count: bookshelf.shelves.count, repeatedValue: Book.init())
+                        for shelf in bookshelf.shelves {
+                            bookList.append(Book.init())
+                        }
+                        
                         for shelf in bookshelf.shelves {
                             fetchBookData(bookid: shelf.book_id, id: i)
                             i += 1
@@ -90,7 +97,8 @@ struct ContentView: View {
             do {
                 var books = try JSONDecoder().decode([Book].self, from: data)
                 books[0].id = id
-                bookList.append(books[0])
+                print("\(books[0].isbn13) / id \(books[0].id)")
+                bookList[id - 1] = books[0]
             } catch {
                 print("Book data load / \(bookid) :" + error.localizedDescription)
             }
@@ -106,6 +114,10 @@ struct ContentView: View {
             return "\(book.series_name): \(book.book_name)"
         }
         return book.book_name
+    }
+    
+    func mergeAuthors (authorList: [String]) -> String {
+        return authorList.joined(separator: ", ")
     }
     
 }
