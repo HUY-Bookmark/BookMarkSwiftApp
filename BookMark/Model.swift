@@ -12,7 +12,7 @@ struct UsrData: Codable {
     var tok: String
 }
 
-struct Book: Codable {
+struct Book: Codable, Hashable {
     let response: String
     var id: Int
     let isbn13: String
@@ -50,4 +50,13 @@ struct Bookshelf: Codable {
     let shelves_number: Int
     let sorting: String
     let shelves: [Shelf]
+}
+
+enum Sorting: String, CaseIterable, Identifiable {
+    case title
+    case titled
+    case author
+    case authord
+
+    var id: String { self.rawValue }
 }
