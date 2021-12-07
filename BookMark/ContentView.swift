@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     
     @State var bookshelves = [Bookshelf]()
-    @State var bookList = [Test]()
+    @State var bookList = [Book]()
     
     var usrData = UsrData(usr: 1, tok: "19208310")
     
@@ -79,7 +79,7 @@ struct ContentView: View {
             
             // convert JSON response into class model as an array
             do {
-                var books = try JSONDecoder().decode([Test].self, from: data)
+                var books = try JSONDecoder().decode([Book].self, from: data)
                 books[0].id = id
                 bookList.append(books[0])
             } catch {
@@ -89,7 +89,7 @@ struct ContentView: View {
         }).resume()
     }
     
-    func fullTitle (book:Test) -> String {
+    func fullTitle (book:Book) -> String {
         return book.series_name + " #" + String(book.series_position)
         + ": " + book.book_name
     }
