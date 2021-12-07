@@ -14,7 +14,7 @@ struct SearchBar: View {
              .foregroundColor(Color("LightGray"))
             HStack {
              Image(systemName: "magnifyingglass")
-             TextField("Search ..", text: $searchText)
+             //TextField("Search ..", text: Text("Search"))
             }
             .foregroundColor(.gray)
             .padding(.leading, 13)

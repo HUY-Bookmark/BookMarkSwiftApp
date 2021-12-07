@@ -7,8 +7,11 @@ struct ContentView: View {
     
     var usrData = UsrData(usr: 1, tok: "19208310")
     
-    var bookshelfApiURL = "http://localhost:8887/api/bookshelf"
-    var bookIdApiURL = "http://localhost:8887/api/book/id/"
+    var host = "https://bookmark-bookshelf.herokuapp.com/api"
+    
+    var bookshelfEndpoint = "/bookshelf"
+    var bookIdEndpoint = "/book/id/"
+    var bookSearchEndpoint = "/book/search/"
   
     var body: some View {
         NavigationView{
@@ -18,15 +21,15 @@ struct ContentView: View {
                     
                 }
             }
-            .onAppear(perform: loadData)
+            .onAppear(perform: loadBookshelf)
             .navigationTitle("Books")
         }
         
     }
     
   
-    func loadData() {
-        guard let url: URL = URL(string: self.bookshelfApiURL)
+    func loadBookshelf() {
+        guard let url: URL = URL(string: self.host + self.bookshelfEndpoint)
         else {
             print("invalid URL")
             return
@@ -56,17 +59,17 @@ struct ContentView: View {
                         }
                     }
                 } catch {
-                    print("Catch " + error.localizedDescription)
+                    print("Bookshelf data load: " + error.localizedDescription)
                 }
                 
             }).resume()
         } catch {
-            print("Catch" + error.localizedDescription)
+            print("Bookshelf send request: " + error.localizedDescription)
         }
     }
     
     func fetchBookData (bookid: String, id: Int) {
-        guard let url: URL = URL(string: self.bookIdApiURL + bookid)
+        guard let url: URL = URL(string: self.host + self.bookIdEndpoint + bookid)
         else {
             print("invalid URL")
             return
@@ -89,15 +92,20 @@ struct ContentView: View {
                 books[0].id = id
                 bookList.append(books[0])
             } catch {
-                print("Catch " + error.localizedDescription)
+                print("Book data load / \(bookid) :" + error.localizedDescription)
             }
             
         }).resume()
     }
     
     func fullTitle (book:Book) -> String {
-        return book.series_name + " #" + String(book.series_position)
-        + ": " + book.book_name
+        if (book.series_name != "" && book.series_position != 0) {
+            return "\(book.series_name) #\(String(book.series_position)): \(book.book_name)"
+        }
+        if (book.series_name != "") {
+            return "\(book.series_name): \(book.book_name)"
+        }
+        return book.book_name
     }
     
 }
