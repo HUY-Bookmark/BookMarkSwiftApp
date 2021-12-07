@@ -34,6 +34,20 @@ struct Book: Codable, Hashable {
         genre = ""
         authors = [""]
     }
+    
+    func fullTitle () -> String {
+        if (series_name != "" && series_position != 0) {
+            return "\(series_name) #\(String(series_position)): \(book_name)"
+        }
+        if (series_name != "") {
+            return "\(series_name): \(book_name)"
+        }
+        return book_name
+    }
+    
+    func authorsString () -> String {
+        return authors.joined(separator: ", ")
+    }
 }
 
 struct Shelf: Codable {
@@ -50,6 +64,16 @@ struct Bookshelf: Codable {
     let shelves_number: Int
     let sorting: String
     let shelves: [Shelf]
+    
+    func getSorting () -> Sorting {
+        switch (sorting) {
+            case "author": return Sorting.author
+            case "title": return Sorting.title
+            case "authord": return Sorting.authord
+            case "titled": return Sorting.titled
+            default: return Sorting.title
+        }
+    }
 }
 
 enum Sorting: String, CaseIterable, Identifiable {
@@ -59,65 +83,4 @@ enum Sorting: String, CaseIterable, Identifiable {
     case authord
 
     var id: String { self.rawValue }
-}
-
-func requestWithBody (method: String, urlStr: String, body: Data, dataProcess: @escaping (Data) -> Void) {
-    
-    
-    guard let url: URL = URL(string: urlStr)
-    else {
-        print("invalid URL")
-        return
-    }
-    
-    var urlRequest: URLRequest = URLRequest(url: url)
-    urlRequest.httpMethod = method
-    do {
-        urlRequest.httpBody = body
-        //print(String(data: urlRequest.httpBody!, encoding: .utf8)!)
-        URLSession.shared.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
-            // check if response is okay
-            
-            guard let data = data else {
-                print("invalid response")
-                return
-            }
-            
-            // convert JSON response into class model as an array
-            dataProcess(data)
-            
-        }).resume()
-    } catch {
-        print("Error in \(method) to \(urlStr): \(error.localizedDescription)")
-    }
-}
-
-func requestNoBody (method: String, urlStr: String, dataProcess: @escaping (Data, Int) -> Void, funcParam: Int) {
-    
-    
-    guard let url: URL = URL(string: urlStr)
-    else {
-        print("invalid URL")
-        return
-    }
-    
-    var urlRequest: URLRequest = URLRequest(url: url)
-    urlRequest.httpMethod = method
-    do {
-        //print(String(data: urlRequest.httpBody!, encoding: .utf8)!)
-        URLSession.shared.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
-            // check if response is okay
-            
-            guard let data = data else {
-                print("invalid response")
-                return
-            }
-            
-            // convert JSON response into class model as an array
-            dataProcess(data, funcParam)
-            
-        }).resume()
-    } catch {
-        print("Error in \(method) to \(urlStr): \(error.localizedDescription)")
-    }
 }

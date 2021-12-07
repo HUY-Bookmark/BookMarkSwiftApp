@@ -8,47 +8,49 @@ struct ContentView: View {
     
     @State private var selectedSorting = Sorting.author
     
-    var usrData = UsrData(usr: 1, tok: "19208310")
-    var bookDefault: Book = Book.init()
-    
-    //let host = "https://bookmark-bookshelf.herokuapp.com/api"
-    let host = "http://localhost:8888/api"
-    
-    let bookshelfEndpoint = "/bookshelf"
-    let bookIdEndpoint = "/book/id/"
-    let bookSearchEndpoint = "/book/search/"
-    let bookshelfSortEndpoint = "/bookshelf/"
-  
     var body: some View {
-        NavigationView {
-            VStack {
-                HStack {
-                    Text("Ordered by")
-                    Picker("Sorting", selection: $selectedSorting) {
-                        Text("Author").tag(Sorting.author)
-                        Text("Author (descending)").tag(Sorting.authord)
-                        Text("Title").tag(Sorting.title)
-                        Text("Title (descending)").tag(Sorting.titled)
-                    }
-                    .onReceive(Just(selectedSorting)) {
-                        selectedSorting in resortBookshelf()
-                    }
+        VStack {
+            NavigationView {
+                VStack {
+                    HStack {
+                        Text("Ordered by")
+                        Picker("Sorting", selection: $selectedSorting) {
+                            Text("Author").tag(Sorting.author)
+                            Text("Author (descending)").tag(Sorting.authord)
+                            Text("Title").tag(Sorting.title)
+                            Text("Title (descending)").tag(Sorting.titled)
+                        }
+                        .onReceive(Just(selectedSorting)) {
+                            selectedSorting in resortBookshelf()
+                        }
 
-                }
-                
-                List(bookList, id: \.id) { item in
-                    VStack(alignment: .leading) {
-                        Text("\(fullTitle(book: item))\n   by \(mergeAuthors(authorList: item.authors))")
                     }
+                    
+                    List(bookList, id: \.id) { item in
+                        VStack(alignment: .leading) {
+                            Text("\(item.fullTitle())\n   by \(item.authorsString())")
+                        }
+                    }
+                    NavigationLink(destination: RecommendedView()) {
+                        Text("My recommended books")
+                        .frame(minWidth: 0, maxWidth: 200)
+                        .padding()
+                        .foregroundColor(.white)
+                        .background(LinearGradient(gradient: Gradient(colors: [Color.pink, Color.indigo]), startPoint: .leading, endPoint: .trailing))
+                        .cornerRadius(40)
+                        .font(.system(size: 16, weight: .light, design: .default))
+                    }
+                    .opacity(0.5)
                 }
             }
+            .navigationTitle("Books")
+            .onAppear(perform: loadBookshelf)
         }
-        .navigationTitle("Books")
-        .onAppear(perform: loadBookshelf)
+        
     }
     
   
-    func loadBookshelf() {
+    func loadBookshelf () {
         var jsonData = Data()
         do {
             jsonData = try JSONEncoder().encode(usrData)
@@ -57,7 +59,7 @@ struct ContentView: View {
         }
         requestWithBody(
             method: "POST",
-            urlStr: self.host + self.bookshelfEndpoint,
+            urlStr: apiHost + bookshelfEndpoint,
             body: jsonData,
             dataProcess: loadBookshelfData)
     }
@@ -65,34 +67,33 @@ struct ContentView: View {
     func loadBookshelfData (data: Data) {
         do {
             self.bookshelves = try JSONDecoder().decode([Bookshelf].self, from: data)
-            initBookshelf()
+            initBookList()
         } catch {
             print("Bookshelf data load: " + error.localizedDescription)
         }
     }
     
-    func initBookshelf () {
-        var i = 1
+    func initBookList () {
         for bookshelf in self.bookshelves {
             for _ in bookshelf.shelves {
                 bookList.append(Book.init())
             }
             
+            var i = 1
             for shelf in bookshelf.shelves {
                 fetchBookData(bookISBN: shelf.book_id, id: i)
                 i += 1
             }
-            selectedSorting = selectSorting(str: bookshelf.sorting)
+            selectedSorting = bookshelf.getSorting()
         }
     }
     
     func fetchBookData (bookISBN: String, id: Int) {
         requestNoBody(
             method: "GET",
-            urlStr: self.host + self.bookIdEndpoint + bookISBN,
+            urlStr: apiHost + bookIdEndpoint + bookISBN,
             dataProcess: loadBookItem,
             funcParam: id)
-        
     }
     
     func loadBookItem (data: Data, id: Int) {
@@ -102,31 +103,6 @@ struct ContentView: View {
             bookList[id - 1] = books[0]
         } catch {
             print("Book data load / \(id) :" + error.localizedDescription)
-        }
-    }
-    
-    
-    func fullTitle (book:Book) -> String {
-        if (book.series_name != "" && book.series_position != 0) {
-            return "\(book.series_name) #\(String(book.series_position)): \(book.book_name)"
-        }
-        if (book.series_name != "") {
-            return "\(book.series_name): \(book.book_name)"
-        }
-        return book.book_name
-    }
-    
-    func mergeAuthors (authorList: [String]) -> String {
-        return authorList.joined(separator: ", ")
-    }
-    
-    func selectSorting (str: String) -> Sorting {
-        switch (str) {
-            case "author": return Sorting.author
-            case "title": return Sorting.title
-            case "authord": return Sorting.authord
-            case "titled": return Sorting.titled
-            default: return Sorting.title
         }
     }
     
@@ -149,7 +125,7 @@ struct ContentView: View {
         
         requestWithBody(
             method: "PATCH",
-            urlStr: self.host + self.bookshelfSortEndpoint + sortingAsStr(s: selectedSorting),
+            urlStr: apiHost + bookshelfSortEndpoint + sortingAsStr(s: selectedSorting),
             body: jsonData,
             dataProcess: updateBookList)
     }
@@ -163,10 +139,29 @@ struct ContentView: View {
                     fetchBookData(bookISBN: shelf.book_id, id: i)
                     i += 1
                 }
-                selectedSorting = selectSorting(str: bookshelf.sorting)
+                selectedSorting = bookshelf.getSorting()
             }
         } catch {
             print("Bookshelf data load: " + error.localizedDescription)
+        }
+    }
+    
+    func loadRecommended () {
+        requestNoBody(
+            method: "GET",
+            urlStr: apiHost + "/recommend",
+            dataProcess: initRecommend,
+            funcParam: 0)
+    }
+    
+    func initRecommend (data: Data, _: Int) {
+        do {
+            let isbns = try JSONDecoder().decode([String].self, from: data)
+            for isbn in isbns {
+                print(isbn)
+            }
+        } catch {
+            print("Recommended list data load: " + error.localizedDescription)
         }
     }
     
