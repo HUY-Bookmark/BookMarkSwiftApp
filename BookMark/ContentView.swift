@@ -5,8 +5,8 @@ struct ContentView: View {
     
     @State var bookshelves = [Bookshelf]()
     @State var bookList = [Book]()
-    
     @State private var selectedSorting = Sorting.author
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack {
@@ -30,6 +30,9 @@ struct ContentView: View {
                         VStack(alignment: .leading) {
                             Text("\(item.fullTitle())\n   by \(item.authorsString())")
                         }
+                    }
+                    .refreshable {
+                        loadBookshelf()
                     }
                     NavigationLink(destination: RecommendedView()) {
                         Text("My recommended books")
@@ -135,6 +138,13 @@ struct ContentView: View {
             let resorted = try JSONDecoder().decode([Bookshelf].self, from: data)
             var i = 1
             for bookshelf in resorted {
+                let diff = bookshelf.shelves.count - bookList.count
+                if (diff > 0) {
+                    for _ in 1...diff {
+                        bookList.append(Book.init())
+                    }
+                }
+                
                 for shelf in bookshelf.shelves {
                     fetchBookData(bookISBN: shelf.book_id, id: i)
                     i += 1
