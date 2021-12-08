@@ -78,8 +78,11 @@ struct ContentView: View {
     
     func initBookList () {
         for bookshelf in self.bookshelves {
-            for _ in bookshelf.shelves {
-                bookList.append(Book.init())
+            let diff = bookshelf.shelves.count - bookList.count
+            if (diff > 0) {
+                for _ in 1...diff {
+                    bookList.append(Book.init())
+                }
             }
             
             var i = 1
