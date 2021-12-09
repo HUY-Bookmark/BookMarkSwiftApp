@@ -32,7 +32,7 @@ struct ContentView: View {
                         }
                     }
                     .refreshable {
-                        loadBookshelf()
+                        fetchBookshelf()
                     }
                     NavigationLink(destination: RecommendedView()) {
                         Text("My recommended books")
@@ -46,14 +46,14 @@ struct ContentView: View {
                     .opacity(0.5)
                 }
             }
-            .navigationTitle("Books")
-            .onAppear(perform: loadBookshelf)
+            .navigationTitle("My BookMark")
+            .onAppear(perform: fetchBookshelf)
         }
         
     }
     
   
-    func loadBookshelf () {
+    func fetchBookshelf () {
         var jsonData = Data()
         do {
             jsonData = try JSONEncoder().encode(usrData)
@@ -64,10 +64,10 @@ struct ContentView: View {
             method: "POST",
             urlStr: apiHost + bookshelfEndpoint,
             body: jsonData,
-            dataProcess: loadBookshelfData)
+            dataProcess: parseBookshelfData)
     }
     
-    func loadBookshelfData (data: Data) {
+    func parseBookshelfData (data: Data) {
         do {
             self.bookshelves = try JSONDecoder().decode([Bookshelf].self, from: data)
             initBookList()
@@ -98,11 +98,11 @@ struct ContentView: View {
         requestNoBody(
             method: "GET",
             urlStr: apiHost + bookIdEndpoint + bookISBN,
-            dataProcess: loadBookItem,
+            dataProcess: setBookData,
             funcParam: id)
     }
     
-    func loadBookItem (data: Data, id: Int) {
+    func setBookData (data: Data, id: Int) {
         do {
             var books = try JSONDecoder().decode([Book].self, from: data)
             books[0].id = id
@@ -156,25 +156,6 @@ struct ContentView: View {
             }
         } catch {
             print("Bookshelf data load: " + error.localizedDescription)
-        }
-    }
-    
-    func loadRecommended () {
-        requestNoBody(
-            method: "GET",
-            urlStr: apiHost + "/recommend",
-            dataProcess: initRecommend,
-            funcParam: 0)
-    }
-    
-    func initRecommend (data: Data, _: Int) {
-        do {
-            let isbns = try JSONDecoder().decode([String].self, from: data)
-            for isbn in isbns {
-                print(isbn)
-            }
-        } catch {
-            print("Recommended list data load: " + error.localizedDescription)
         }
     }
     

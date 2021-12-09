@@ -2,7 +2,7 @@
 //  ModelEndpoints.swift
 //  BookMark
 //
-//  Created by Ellana Dairen on 07/12/2021.
+//  Created by Sarah Schlegel on 07/12/2021.
 //
 
 import Foundation

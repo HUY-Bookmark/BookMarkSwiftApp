@@ -2,7 +2,7 @@
 //  RecommendedView.swift
 //  BookMark
 //
-//  Created by Ellana Dairen on 07/12/2021.
+//  Created by Sarah Schlegel on 07/12/2021.
 //
 
 import SwiftUI
@@ -12,6 +12,14 @@ struct RecommendedView: View {
     
     @State var recommendedList = [Book]()
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+
+    var btnBack : some View { Button(action: {
+        self.presentationMode.wrappedValue.dismiss()
+        }) {
+            Text("< My Books")
+        }
+    }
     
     struct addBookData: Codable {
         var usr: Int
@@ -20,7 +28,9 @@ struct RecommendedView: View {
     }
     
     var body: some View {
-        NavigationView {
+        VStack {
+            Text("Recommended books")
+                .bold()
             List(recommendedList, id: \.id) { item in
                 VStack(alignment: .leading) {
                     HStack () {
@@ -43,11 +53,13 @@ struct RecommendedView: View {
                 }
             }
         }
-        .navigationTitle("Recommended Books")
-        .onAppear(perform: loadRecommended)
+//        .navigationTitle("Recommended Books")
+        .onAppear(perform: fetchRecommended)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: btnBack)
     }
     
-    func loadRecommended () {
+    func fetchRecommended () {
         requestNoBody(
             method: "GET",
             urlStr: apiHost + "/recommend",
